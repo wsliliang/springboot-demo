@@ -1,0 +1,73 @@
+### 查看所有链路
+GET http://localhost:9200/jaeger-span-2023-08-26/_search
+Content-Type: application/json
+
+{
+  "size": 0,
+  "aggs": {
+    "group_by_field": {
+      "terms": {
+        "field": "traceID"
+      },
+      "aggs": {
+        "count_docs": {
+          "value_count": {
+            "field": "_id"
+          }
+        }
+      }
+    }
+  }
+}
+
+
+### 根据traceId查询
+POST http://localhost:9200/jaeger-span-2023-08-25/_search
+Content-Type: application/json
+
+{
+  "_source": {
+    "includes": ["traceID", "spanID","operationName","startTime","tags","references","process.serviceName"]
+  },
+  "query": {
+    "match": {
+      "traceID": "f6b91c6e68bc8e60"
+    }
+  }
+}
+
+### 根据traceId查询所有字段
+POST http://localhost:9200/jaeger-span-2023-08-25/_search
+Content-Type: application/json
+
+{
+  "query": {
+    "match": {
+      "traceID": "f6b91c6e68bc8e60"
+    }
+  }
+}
+
+### 查询所有service
+POST http://localhost:9200/jaeger-service-2023-08-25/_search
+Content-Type: application/json
+
+### 查询所有索引
+GET http://localhost:9200/_cat/indices
+Content-Type: application/json
+
+### 用SQL查看所有的service
+POST http://localhost:9200/_sql?format=json
+Content-Type: application/json
+
+{
+"query": "SELECT * FROM \"jaeger-service-2023-08-25\""
+}
+
+### 用SQL查看所有的span
+POST http://localhost:9200/_sql?format=json
+Content-Type: application/json
+
+{
+  "query": "SELECT * FROM \"jaeger-span-2023-08-25\""
+}

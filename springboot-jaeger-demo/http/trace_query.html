@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>查询页面</title>
+</head>
+<body>
+<input id="indexInput" type="text" placeholder="输入span index名称">
+<br>
+<input id="traceIdInput" type="text" placeholder="输入traceId">
+<br>
+<button onclick="sendRequest()">查询</button>
+<div id="result"></div>
+
+<script>
+    function sendRequest() {
+        var indexName = document.getElementById("indexInput").value;
+        var traceId = document.getElementById("traceIdInput").value;
+
+        var requestBody = {
+            "_source": {
+                "includes": ["traceID", "spanID","operationName","startTime","references","tags","process.serviceName"]
+            },
+            "query": {
+                "match": {
+                    "traceID": traceId
+                }
+            }
+        };
+
+        fetch("http://localhost:9200/" + indexName + "/_search", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(requestBody)
+        })
+            .then(function(response) {
+                if (response.ok) {
+                    return response.json();
+                }
+                throw new Error("请求失败");
+            })
+            .then(function(data) {
+                var hits = data.hits.hits;
+
+                var spanList = new Array();
+                for (var i = 0; i < hits.length; i++) {
+                    var source = hits[i]._source;
+                    var span = new Object();
+                    span.traceId = source.traceID;
+                    span.spanID = source.spanID;
+                    span.operationName = source.operationName;
+                    span.startTime = source.startTime;
+                    span.references = source.references;
+                    if (source.tags.length > 0) {
+                        for (var j=0;j<source.tags.length;j++) {
+                            if (source.tags[j].key == 'component') {
+                                span.component =  source.tags[j].value;
+                            }
+                        }
+                    }
+                    span.serviceName = source.process.serviceName;
+                    spanList.push(span);
+                }
+
+                spanList.sort(function(a, b) {
+                    return a.startTime - b.startTime;
+                });
+
+                var output = "";
+
+                for (var i = 0; i < spanList.length; i++) {
+                    var span = spanList[i];
+                    output += "Trace ID: " + span.traceId + "<br>";
+                    output += "Span ID: " + span.spanID + "<br>";
+                    output += "operationName: " + span.operationName + "<br>";
+                    output += "References: " + JSON.stringify(span.references) + "<br>";
+                    output += "component: " + span.component + "<br>";
+                    output += "Service Name: " + span.serviceName + "<br><br>";
+                }
+
+                document.getElementById("result").innerHTML = output;
+            })
+            .catch(function(error) {
+                console.error(error);
+            });
+    }
+</script>
+</body>
+</html>

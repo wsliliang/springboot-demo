@@ -1,0 +1,9 @@
+server:
+  port: 8081
+spring:
+  application:
+    name: jager-demo-serviceA
+  datasource:
+    url: jdbc:mysql://localhost:3306/test?serverTimezone=Asia/Shanghai
+    username: root
+    password: 123456
